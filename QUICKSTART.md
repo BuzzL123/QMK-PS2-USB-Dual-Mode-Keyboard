@@ -172,10 +172,10 @@ Use another Pico to monitor PS/2 signals:
 1. **Get the decoder script**:
    ```bash
    # Download just the decoder (no need to clone everything)
-   curl -O https://raw.githubusercontent.com/BuzzL123/qmk-single-button-ps2-usb-dual-mode-keyboard-demo/main/ps2_decoder.py
+   curl -O https://raw.githubusercontent.com/BuzzL123/QMK-PS2-USB-Dual-Mode-Keyboard/main/ps2_decoder.py
    
    # Or with wget
-   wget https://raw.githubusercontent.com/BuzzL123/qmk-single-button-ps2-usb-dual-mode-keyboard-demo/main/ps2_decoder.py
+   wget https://raw.githubusercontent.com/BuzzL123/QMK-PS2-USB-Dual-Mode-Keyboard/main/ps2_decoder.py
    ```
 
 2. **Upload the decoder script** to a second Pico:
