@@ -10,8 +10,11 @@ A QMK-based keyboard firmware that supports both USB and PS/2 protocols on an RP
 
 - 🔌 **Dual Protocol Support**: USB HID and PS/2 device modes
 - 🔄 **Hardware Mode Switch**: Toggle between USB and PS/2 with a physical switch
-- ⌨️ **Full PS/2 Implementation**: 
-  - Make/Break scan codes (Set 2)
+- ⌨️ **Complete PS/2 Implementation**: 
+  - Full Scan Code Set 2 support (all standard keys)
+  - Extended scancodes (F13-F24, multimedia, browser controls, power management)
+  - International keyboard support (Japanese, Korean layouts)
+  - Make/Break scan codes with automatic E0 prefix handling
   - Typematic repeat (auto-repeat when key held)
   - Proper timing and idle state handling
 - 🎮 **RP2040 Powered**: Built for Raspberry Pi Pico and compatible boards
@@ -63,17 +66,7 @@ A QMK-based keyboard firmware that supports both USB and PS/2 protocols on an RP
 | Mode Switch | GP14 | HIGH = USB mode, LOW = PS/2 mode |
 
 ### PS/2 Connector Pinout
-
-```
-  ___
- /   \
-| 6 5 |    1: Data
-| 4 3 |    2: Not connected
- \ 2 1/    3: Ground
-  ---      4: VCC (+5V)
-           5: Clock
-           6: Not connected
-```
+![PS/2-Pinout](https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.26t6hR8LtDg6UF4Z_CXtUwHaFA%3Fpid%3DApi%26ucfimg%3D1&f=1&ipt=2a8778ad5c083ed91012ae51ea8c5f98157f2c1856d839ca5e63038d2b3a5428&ipo=images)
 
 **Wiring:**
 - Pin 1 (Data) → GP17
@@ -165,10 +158,12 @@ bjl/ps2demo/
 ├── keyboard.h        # Keyboard header and layout definitions
 ├── ps2_device.c      # PS/2 protocol implementation
 ├── ps2_device.h      # PS/2 protocol header
+├── ps2_scancodes.h   # Complete PS/2 Scan Code Set 2 definitions
 ├── rules.mk          # Build configuration
 ├── ps2_decoder.py    # Testing tool for second Pico
 ├── README.md         # This file
 ├── QUICKSTART.md     # Quick start guide
+├── SCANCODES.md      # Complete scancode reference
 └── LICENSE           # GPL-2.0 license
 ```
 
@@ -194,9 +189,22 @@ Each byte sent over PS/2 consists of 11 bits:
 
 - **Make Codes**: Sent when key is pressed
 - **Break Codes**: Two-byte sequence (`0xF0` + scan code) sent when key is released
+- **E0 Extended Codes**: Automatic handling for navigation, arrows, multimedia keys
+- **Complete Key Support**:
+  - All standard keys (A-Z, 0-9, symbols, modifiers)
+  - Function keys (F1-F24)
+  - Navigation cluster (Insert, Delete, Home, End, Page Up/Down)
+  - Arrow keys (Up, Down, Left, Right)
+  - Numeric keypad (full support)
+  - Multimedia keys (Volume, Play/Pause, Next/Previous, Stop)
+  - Browser controls (Back, Forward, Refresh, Home, Search, Favorites)
+  - Application launchers (Mail, Calculator, My Computer)
+  - Power management (Power, Sleep, Wake)
+  - International keys (Japanese and Korean keyboard support)
 - **Typematic Repeat**: 
   - Delay: 500ms before repeat starts
   - Rate: ~30 repeats per second (33ms interval)
+  - Works with all keys including E0-prefixed keys
 
 ## Debugging
 
@@ -242,10 +250,12 @@ See [QUICKSTART.md](QUICKSTART.md#for-testingdebugging) for detailed instruction
 
 ### Adding More Keys
 
+The firmware includes **complete PS/2 Scan Code Set 2 support**, so you can add any standard keyboard key to your keymap!
+
 Edit `keymaps/default/keymap.c` and `info.json` to add more keys:
 
 ```c
-// keymap.c
+// Example: 3-key keyboard
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [0] = LAYOUT_ortho_1x3(
         KC_A, KC_B, KC_C
@@ -253,17 +263,39 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 ```
 
-Then add scan code mappings in `keyboard.c`:
-
 ```c
-case KC_B:
-    if (record->event.pressed) {
-        ps2_device_send_key_make(0x32);  // B key scan code
-    } else {
-        ps2_device_send_key_break(0x32);
-    }
-    return false;
+// Example: Full row with multimedia
+const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
+    [0] = LAYOUT_ortho_1x6(
+        KC_ESC, KC_VOLU, KC_VOLD, KC_MUTE, KC_MPLY, KC_CALC
+    )
+};
 ```
+
+**No additional coding required!** The firmware automatically:
+- Maps QMK keycodes to PS/2 scancodes
+- Sends E0 prefix for extended keys
+- Handles typematic repeat for all keys
+
+### Supported Key Categories
+
+All of these work out of the box:
+
+| Category | Example Keys | Notes |
+|----------|--------------|-------|
+| **Letters** | KC_A through KC_Z | Standard |
+| **Numbers** | KC_1 through KC_0 | Standard |
+| **Function Keys** | KC_F1 through KC_F24 | F13-F24 supported |
+| **Modifiers** | KC_LSFT, KC_LCTL, KC_LALT, KC_LGUI | Left and right |
+| **Navigation** | KC_HOME, KC_END, KC_PGUP, KC_PGDN | Auto E0 prefix |
+| **Arrows** | KC_UP, KC_DOWN, KC_LEFT, KC_RGHT | Auto E0 prefix |
+| **Editing** | KC_INS, KC_DEL, KC_BSPC | Auto E0 prefix |
+| **Multimedia** | KC_MUTE, KC_VOLU, KC_VOLD, KC_MPLY | Auto E0 prefix |
+| **Browser** | KC_WSCH, KC_WHOM, KC_WBAK, KC_WFWD | Auto E0 prefix |
+| **Applications** | KC_MAIL, KC_CALC, KC_MYCM | Auto E0 prefix |
+| **Power** | KC_PWR, KC_SLEP, KC_WAKE | Auto E0 prefix |
+| **Keypad** | KC_P0 through KC_P9, KC_PPLS, KC_PMNS | Full numpad |
+| **International** | KC_INT1 through KC_INT5, KC_LNG1, KC_LNG2 | Japanese/Korean |
 
 ### Adjusting Typematic Rate
 
@@ -296,9 +328,10 @@ Most PS/2 projects implement **host** mode (reading from a PS/2 keyboard). This 
 
 - [ ] Host-to-device command handling (LED updates, scan code set switching)
 - [ ] Full keyboard matrix support
+- [x] **Full scancode support** - Complete PS/2 Scan Code Set 2 implementation
 - [ ] PS/2 host mode (for connecting PS/2 keyboards to USB)
 - [ ] Bidirectional PS/2 communication
-- [ ] Support for extended scan codes (multimedia keys)
+- [x] **Extended scan codes** - Multimedia keys, browser controls, power management, F13-F24
 
 ## Troubleshooting
 
@@ -347,6 +380,7 @@ This license matches QMK Firmware's GPL-2.0 license for maximum compatibility.
 - [PS/2 Protocol Specification](https://www.avrfreaks.net/sites/default/files/PS2%20Keyboard.pdf)
 - [QMK Documentation](https://docs.qmk.fm/)
 - [RP2040 Datasheet](https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf)
+- [Complete Scancode Reference](SCANCODES.md) - Full PS/2 Scan Code Set 2 table
 
 ## Contributing
 

@@ -136,14 +136,14 @@ try:
                     expecting_break = False
                 else:
                     print(f"✓ KEY DOWN: {key_name}")
-        else:
-            # Invalid frame detected - resync
-            print("⚠ Invalid frame detected, resyncing...")
-            if wait_for_idle():
-                print("  Resync successful")
-            else:
-                print("  Resync timeout!")
-            time.sleep_ms(10)
+#         else:
+#             # Invalid frame detected - resync
+#             print("⚠ Invalid frame detected, resyncing...")
+#             if wait_for_idle():
+#                 print("  Resync successful")
+#             else:
+#                 print("  Resync timeout!")
+#             time.sleep_ms(10)
 
 except KeyboardInterrupt:
     print("\n" + "=" * 50)
